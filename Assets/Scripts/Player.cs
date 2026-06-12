@@ -10,6 +10,14 @@ public class Player : MonoBehaviour
     float angle;
     float smoothInputMagnitude;
     float smoothMoveVelocity;
+    Vector3 velocity;
+
+    Rigidbody rigidBody;
+
+    void Start()
+    {
+        rigidBody = GetComponent<Rigidbody>();
+    }
 
     void Update()
     {
@@ -29,11 +37,12 @@ public class Player : MonoBehaviour
 
         float targetAngel = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
         angle = Mathf.LerpAngle(angle, targetAngel, Time.deltaTime * turnSpeed * inputMagnitude);
-        transform.eulerAngles = Vector3.up * angle;
+        velocity = transform.forward * moveSpeed * smoothInputMagnitude;
+    }
 
-        transform.Translate(
-            transform.forward * moveSpeed * Time.deltaTime * smoothInputMagnitude,
-            Space.World
-        );
+    void FixedUpdate()
+    {
+        rigidBody.MoveRotation(Quaternion.Euler(Vector3.up * angle));
+        rigidBody.MovePosition(rigidBody.position + velocity * Time.deltaTime);
     }
 }

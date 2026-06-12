@@ -1,14 +1,22 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 public class Guard : MonoBehaviour
 {
     public Transform pathHolder;
+    public Light spotLight;
+    public float viewDistance;
+    float viewAngle;
+
+    Transform player;
+    Color originalSpotlightColor;
 
     public float speed = 5;
     public float waitTime = .3f;
     public float turnSpeed = 90f;
+    public LayerMask viewMask;
 
     void OnDrawGizmos()
     {
@@ -22,6 +30,8 @@ public class Guard : MonoBehaviour
         }
 
         Gizmos.DrawLine(previousPosition, startPosition);
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(transform.position, transform.forward * viewDistance);
     }
 
     void Start()
@@ -34,6 +44,33 @@ public class Guard : MonoBehaviour
         }
 
         StartCoroutine(FollowPath(waypoints));
+
+        viewAngle = spotLight.spotAngle;
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        originalSpotlightColor = spotLight.color;
+    }
+
+    bool CanSeePlayer()
+    {
+        if (Vector3.Distance(transform.position, player.position) > viewDistance)
+        {
+            return false;
+        }
+
+        Vector3 dirToPlayer = (player.position - transform.position).normalized;
+        float angleBetweenGuardAndPlayer = Vector3.Angle(transform.forward, dirToPlayer);
+
+        if (angleBetweenGuardAndPlayer > viewAngle / 2f)
+        {
+            return false;
+        }
+
+        if (Physics.Linecast(transform.position, player.position, viewMask))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     IEnumerator TurnToFace(Vector3 lookTarget)
@@ -83,5 +120,15 @@ public class Guard : MonoBehaviour
         }
     }
 
-    void Update() { }
+    void Update()
+    {
+        if (CanSeePlayer())
+        {
+            spotLight.color = Color.red;
+        }
+        else
+        {
+            spotLight.color = originalSpotlightColor;
+        }
+    }
 }
