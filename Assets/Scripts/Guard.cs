@@ -5,10 +5,15 @@ using UnityEngine.Experimental.GlobalIllumination;
 
 public class Guard : MonoBehaviour
 {
+    public static event Action onGuardHasSpottedPlayer;
+
     public Transform pathHolder;
     public Light spotLight;
     public float viewDistance;
+    public float timeToSpotPlayer = .5f;
+
     float viewAngle;
+    float playerVisibleTimer;
 
     Transform player;
     Color originalSpotlightColor;
@@ -124,11 +129,26 @@ public class Guard : MonoBehaviour
     {
         if (CanSeePlayer())
         {
-            spotLight.color = Color.red;
+            playerVisibleTimer += Time.deltaTime;
         }
         else
         {
-            spotLight.color = originalSpotlightColor;
+            playerVisibleTimer -= Time.deltaTime;
+        }
+
+        playerVisibleTimer = Mathf.Clamp01(playerVisibleTimer);
+        spotLight.color = Color.Lerp(
+            originalSpotlightColor,
+            Color.red,
+            playerVisibleTimer / timeToSpotPlayer
+        );
+
+        if (playerVisibleTimer >= timeToSpotPlayer)
+        {
+            if (onGuardHasSpottedPlayer != null)
+            {
+                onGuardHasSpottedPlayer();
+            }
         }
     }
 }
